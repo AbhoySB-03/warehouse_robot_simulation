@@ -1,0 +1,503 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mobile_robot">
+
+  <!-- ========================================== -->
+  <!--             SCALING ARGUMENTS              -->
+  <!-- ========================================== -->
+  <xacro:arg name="scale_chassis_x" default="1.0"/>
+  <xacro:arg name="scale_chassis_y" default="1.0"/>
+  <xacro:arg name="scale_chassis_z" default="1.0"/>
+  <xacro:arg name="wheel_radius_scale" default="1.0"/>
+  <xacro:arg name="wheel_width_scale" default="1.0"/>
+
+  <!-- Payload Box Arguments -->
+  <xacro:arg name="payload_mass" default="3.0"/>
+  <xacro:arg name="payload_length" default="0.35"/>
+  <xacro:arg name="payload_width" default="0.35"/>
+  <xacro:arg name="payload_height" default="0.18"/>
+
+  <!-- Properties: Chassis Scale -->
+  <xacro:property name="sx" value="$(arg scale_chassis_x)"/>
+  <xacro:property name="sy" value="$(arg scale_chassis_y)"/>
+  <xacro:property name="sz" value="$(arg scale_chassis_z)"/>
+
+  <!-- Properties: Wheel Scale -->
+  <xacro:property name="sr" value="$(arg wheel_radius_scale)"/>
+  <xacro:property name="sw" value="$(arg wheel_width_scale)"/>
+
+  <!-- Properties: Payload Box -->
+  <xacro:property name="box_m" value="$(arg payload_mass)"/>
+  <xacro:property name="box_l" value="${$(arg payload_length) * sx}"/>
+  <xacro:property name="box_w" value="${$(arg payload_width) * sy}"/>
+  <xacro:property name="box_h" value="${$(arg payload_height) * sz}"/>
+
+  <!-- Analytical Cuboid Inertia for Payload Box:
+       Ixx = (1/12) * m * (w^2 + h^2)
+       Iyy = (1/12) * m * (l^2 + h^2)
+       Izz = (1/12) * m * (l^2 + w^2)
+  -->
+  <xacro:property name="box_ixx" value="${(1.0 / 12.0) * box_m * (box_w * box_w + box_h * box_h)}"/>
+  <xacro:property name="box_iyy" value="${(1.0 / 12.0) * box_m * (box_l * box_l + box_h * box_h)}"/>
+  <xacro:property name="box_izz" value="${(1.0 / 12.0) * box_m * (box_l * box_l + box_w * box_w)}"/>
+
+  <!-- ========================================== -->
+  <!--        CHASSIS DENSITY, MASS & INERTIA     -->
+  <!-- ========================================== -->
+  <xacro:property name="chassis_nom_length" value="0.9874"/>  <!-- X dimension -->
+  <xacro:property name="chassis_nom_width"  value="0.5709"/>  <!-- Y dimension -->
+  <xacro:property name="chassis_nom_height" value="0.2700"/>  <!-- Z dimension -->
+  <xacro:property name="chassis_nom_mass"   value="46.034"/>  <!-- kg -->
+
+  <xacro:property name="chassis_nom_volume" 
+                  value="${chassis_nom_length * chassis_nom_width * chassis_nom_height}"/>
+  <xacro:property name="chassis_density" 
+                  value="${chassis_nom_mass / chassis_nom_volume}"/>
+
+  <xacro:property name="chassis_length" value="${chassis_nom_length * sx}"/>
+  <xacro:property name="chassis_width"  value="${chassis_nom_width * sy}"/>
+  <xacro:property name="chassis_height" value="${chassis_nom_height * sz}"/>
+
+  <xacro:property name="chassis_volume" 
+                  value="${chassis_length * chassis_width * chassis_height}"/>
+  <xacro:property name="chassis_mass" 
+                  value="${chassis_density * chassis_volume}"/>
+
+  <xacro:property name="chassis_ixx" 
+                  value="${(1.0 / 12.0) * chassis_mass * (chassis_width * chassis_width + chassis_height * chassis_height)}"/>
+  <xacro:property name="chassis_iyy" 
+                  value="${(1.0 / 12.0) * chassis_mass * (chassis_length * chassis_length + chassis_height * chassis_height)}"/>
+  <xacro:property name="chassis_izz" 
+                  value="${(1.0 / 12.0) * chassis_mass * (chassis_length * chassis_length + chassis_width * chassis_width)}"/>
+
+  <!-- ========================================== -->
+  <!--         WHEEL PROPERTIES & INERTIA         -->
+  <!-- ========================================== -->
+  <xacro:property name="wheel_nom_radius" value="0.1651"/>
+  <xacro:property name="wheel_nom_width"  value="0.1143"/>
+  <xacro:property name="wheel_nom_mass"   value="2.637"/>
+  <xacro:property name="wheel_radius"     value="${wheel_nom_radius * sr}"/>
+  <xacro:property name="wheel_width"      value="${wheel_nom_width * sw}"/>
+  <xacro:property name="wheel_mass"       value="${wheel_nom_mass * (sr * sr) * sw}"/>
+
+  <xacro:property name="wheelbase_half"   value="${0.256 * sx}"/>
+  <xacro:property name="track_half"       value="${0.2854 * sy}"/>
+  <xacro:property name="wheel_z_offset"   value="${0.03282 * sz}"/>
+
+  <!-- ========================================== -->
+  <!--                 ROOT LINK                  -->
+  <!-- ========================================== -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ========================================== -->
+  <!--                 BASE LINK                  -->
+  <!-- ========================================== -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.0 0.0 ${0.062 * sz}" rpy="0 0 0"/>
+      <mass value="${chassis_mass}"/>
+      <inertia 
+        ixx="${chassis_ixx}" ixy="0.0" ixz="0.0" 
+        iyy="${chassis_iyy}" iyz="0.0" 
+        izz="${chassis_izz}"/>
+    </inertial>
+
+    <!-- Collisions -->
+    <collision name="base_link_collision">
+      <origin xyz="0 0 ${0.12 * sz}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${0.9874 * sx} ${0.5709 * sy} ${0.05 * sz}"/>
+      </geometry>
+    </collision>
+
+    <collision name="base_link_collision_bottom">
+      <origin xyz="0 0 ${0.046 * sz}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${0.80 * sx} ${0.5709 * sy} ${0.095 * sz}"/>
+      </geometry>
+    </collision>
+
+    <collision name="base_link_collision_1">
+      <origin xyz="0 0 ${0.185625 * sz}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${0.78992 * sx} ${0.5709 * sy} ${0.12375 * sz}"/>
+      </geometry>
+    </collision>
+
+    <collision name="top_plate_collision">
+      <origin xyz="${0.0812 * sx} 0 ${0.245 * sz}" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/top_plate.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </collision>
+
+    <collision name="top_plate_collision_2">
+      <origin xyz="${0.0812 * sx} 0 ${0.245 * sz}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${0.32 * sx} ${0.41 * sy} ${0.09 * sz}"/>
+      </geometry>
+    </collision>
+
+    <!-- Visuals -->
+    <visual name="base_link_visual">
+      <origin xyz="0 0 0" rpy="0 0 -3.14159"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/chassis.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="top_plate_visual">
+      <origin xyz="${0.0812 * sx} 0 ${0.245 * sz}" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/top_plate.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <!-- Headlights Visuals -->
+    <visual name="center_left_headlight_visual">
+      <origin xyz="${0.485766 * sx} ${0.0844 * sy} ${0.124431 * sz}" rpy="0 0 -3.14159"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/headlight.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="center_right_headlight_visual">
+      <origin xyz="${0.485766 * sx} ${-0.0844 * sy} ${0.124431 * sz}" rpy="0 0 -3.14159"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/headlight.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="left_headlight_visual">
+      <origin xyz="${0.461459 * sx} ${0.216803 * sy} ${0.124431 * sz}" rpy="0 0 -3.14159"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/headlight.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="right_headlight_visual">
+      <origin xyz="${0.461459 * sx} ${-0.216803 * sy} ${0.124431 * sz}" rpy="0 0 -3.14159"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/headlight.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <!-- Marker Visuals (LEDs) -->
+    <visual name="marker_visual_1">
+      <origin xyz="${0.066047 * sx} ${0.212211 * sy} ${0.209188 * sz}" rpy="-3.14159 1.57079 -1.60259"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/led.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="marker_visual_2">
+      <origin xyz="${-0.066047 * sx} ${0.212211 * sy} ${0.209188 * sz}" rpy="-3.14159 1.57079 -1.60259"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/led.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="marker_visual_3">
+      <origin xyz="${-0.42493 * sx} 0 ${0.209188 * sz}" rpy="3.14159 1.57079 0.0"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/led.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="marker_visual_4">
+      <origin xyz="${-0.42493 * sx} ${0.13619 * sy} ${0.209188 * sz}" rpy="3.14159 1.57079 0.0"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/led.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="marker_visual_5">
+      <origin xyz="${-0.42493 * sx} ${-0.13619 * sy} ${0.209188 * sz}" rpy="3.14159 1.57079 0.0"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/led.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="marker_visual_6">
+      <origin xyz="${0.066047 * sx} ${-0.212211 * sy} ${0.209188 * sz}" rpy="3.14159 1.57079 1.60259"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/led.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="marker_visual_7">
+      <origin xyz="${-0.066047 * sx} ${-0.212211 * sy} ${0.209188 * sz}" rpy="3.14159 1.57079 1.60259"/>
+      <geometry>
+        <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/led.dae" scale="${sx} ${sy} ${sz}"/>
+      </geometry>
+    </visual>
+
+    <!-- Stereo Camera Mount Geometry Visuals -->
+    <visual name="camera_front_right_visual">
+      <origin xyz="${0.43 * sx} ${-0.1 * sy} ${0.26 * sz}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${0.02 * sx} ${0.02 * sy} ${0.02 * sz}"/>
+      </geometry>
+    </visual>
+
+    <visual name="camera_front_left_visual">
+      <origin xyz="${0.43 * sx} ${0.1 * sy} ${0.26 * sz}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${0.02 * sx} ${0.02 * sy} ${0.02 * sz}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- ========================================== -->
+  <!--           PAYLOAD BOX (CARRY LOAD)         -->
+  <!-- ========================================== -->
+  <link name="payload_box">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${box_m}"/>
+      <inertia 
+        ixx="${box_ixx}" ixy="0.0" ixz="0.0" 
+        iyy="${box_iyy}" iyz="0.0" 
+        izz="${box_izz}"/>
+    </inertial>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${box_l} ${box_w} ${box_h}"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${box_l} ${box_w} ${box_h}"/>
+      </geometry>
+      <material name="cardboard_brown">
+        <color rgba="0.65 0.45 0.25 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="payload_box_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="payload_box"/>
+    <origin xyz="0.0 0.0 ${0.265 * sz + box_h / 2.0}" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="payload_box">
+    <visual>
+      <material>
+        <ambient>0.65 0.45 0.25 1.0</ambient>
+        <diffuse>0.65 0.45 0.25 1.0</diffuse>
+        <specular>0.1 0.1 0.1 1.0</specular>
+      </material>
+    </visual>
+  </gazebo>
+
+  <!-- ========================================== -->
+  <!--               WHEEL MACRO                  -->
+  <!-- ========================================== -->
+  <xacro:macro name="wheel" params="prefix x_reflect y_reflect">
+    <link name="${prefix}_wheel">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="${wheel_mass}"/>
+        <inertia 
+          ixx="${(1.0 / 12.0) * wheel_mass * (3.0 * wheel_radius * wheel_radius + wheel_width * wheel_width)}" 
+          ixy="0.0" 
+          ixz="0.0" 
+          iyy="${(1.0 / 2.0) * wheel_mass * (wheel_radius * wheel_radius)}" 
+          iyz="0.0" 
+          izz="${(1.0 / 12.0) * wheel_mass * (3.0 * wheel_radius * wheel_radius + wheel_width * wheel_width)}"/>
+      </inertial>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="${-pi / 2.0} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://warehouse_simulation/models/mobile_robot/meshes/wheel.dae" scale="${sr} ${sw} ${sr}"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_wheel"/>
+      <origin xyz="${x_reflect * wheelbase_half} ${y_reflect * track_half} ${wheel_z_offset}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="100.0" velocity="20.0"/>
+      <dynamics damping="0.5" friction="0.8"/>
+    </joint>
+
+    <gazebo reference="${prefix}_wheel">
+      <mu1>1.0</mu1>
+      <mu2>0.05</mu2>
+      <fdir1>1 0 0</fdir1>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <minDepth>0.001</minDepth>
+      <maxVel>0.1</maxVel>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- Wheel Instantiations -->
+  <xacro:wheel prefix="front_left"  x_reflect="1"  y_reflect="1" />
+  <xacro:wheel prefix="front_right" x_reflect="1"  y_reflect="-1"/>
+  <xacro:wheel prefix="rear_left"   x_reflect="-1" y_reflect="1" />
+  <xacro:wheel prefix="rear_right"  x_reflect="-1" y_reflect="-1"/>
+
+  <!-- ========================================== -->
+  <!--             IMU SENSOR & FRAME             -->
+  <!-- ========================================== -->
+  <link name="imu_link"/>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 ${0.062 * sz}" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="imu_link">
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <topic>imu</topic>
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.005</stddev>
+              <bias_mean>0.0001</bias_mean>
+              <bias_stddev>0.00001</bias_stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.005</stddev>
+              <bias_mean>0.0001</bias_mean>
+              <bias_stddev>0.00001</bias_stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.005</stddev>
+              <bias_mean>0.0001</bias_mean>
+              <bias_stddev>0.00001</bias_stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.02</stddev>
+              <bias_mean>0.001</bias_mean>
+              <bias_stddev>0.0001</bias_stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.02</stddev>
+              <bias_mean>0.001</bias_mean>
+              <bias_stddev>0.0001</bias_stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.02</stddev>
+              <bias_mean>0.001</bias_mean>
+              <bias_stddev>0.0001</bias_stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <!-- ========================================== -->
+  <!--           ROS 2 CONTROL HARDWARE           -->
+  <!-- ========================================== -->
+  <ros2_control name="IgnitionSystem" type="system">
+    <hardware>
+      <plugin>ign_ros2_control/IgnitionSystem</plugin>
+    </hardware>
+
+    <joint name="front_left_wheel_joint">
+      <command_interface name="effort">
+        <param name="min">-100.0</param>
+        <param name="max">100.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <joint name="front_right_wheel_joint">
+      <command_interface name="effort">
+        <param name="min">-100.0</param>
+        <param name="max">100.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <joint name="rear_left_wheel_joint">
+      <command_interface name="effort">
+        <param name="min">-100.0</param>
+        <param name="max">100.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+
+    <joint name="rear_right_wheel_joint">
+      <command_interface name="effort">
+        <param name="min">-100.0</param>
+        <param name="max">100.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+
+  <!-- ========================================== -->
+  <!--      IGNITION GAZEBO SYSTEM PLUGINS        -->
+  <!-- ========================================== -->
+  <gazebo>
+    <!-- ROS 2 Control Plugin -->
+    <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
+      <parameters>$(find warehouse_simulation)/models/mobile_robot/config/wheel_effort_controller.yaml</parameters>
+    </plugin>
+
+    <!-- IMU System Plugin -->
+    <plugin filename="ignition-gazebo-imu-system" name="ignition::gazebo::systems::Imu">
+    </plugin>
+
+    <!-- Ground-Truth Odometry & Velocity Publisher Plugin -->
+    <plugin filename="ignition-gazebo-odometry-publisher-system" name="ignition::gazebo::systems::OdometryPublisher">
+      <odom_topic>true_pos_and_vel</odom_topic>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <dimensions>3</dimensions>
+    </plugin>
+  </gazebo>
+
+</robot>

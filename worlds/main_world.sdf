@@ -1,0 +1,329 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="warehouse_world">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.002</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+
+    <!-- Warehouse Overhead Lighting -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 12 0 0 0</pose>
+      <diffuse>0.85 0.85 0.85 1</diffuse>
+      <specular>0.25 0.25 0.25 1</specular>
+      <direction>-0.3 0.2 -0.9</direction>
+    </light>
+
+    <light type="point" name="warehouse_lamp_1">
+      <pose>5 3.5 3.8 0 0 0</pose>
+      <diffuse>0.6 0.6 0.55 1</diffuse>
+      <attenuation><range>25</range><linear>0.05</linear><constant>0.2</constant></attenuation>
+    </light>
+    <light type="point" name="warehouse_lamp_2">
+      <pose>-5 -3.5 3.8 0 0 0</pose>
+      <diffuse>0.6 0.6 0.55 1</diffuse>
+      <attenuation><range>25</range><linear>0.05</linear><constant>0.2</constant></attenuation>
+    </light>
+
+    <!-- Polished Warehouse Concrete Floor: 20m x 15m -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 15</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.80</mu>
+                <mu2>0.25</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 15</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.72 0.72 0.74 1</ambient>
+            <diffuse>0.72 0.72 0.74 1</diffuse>
+            <specular>0.3 0.3 0.3 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ======================================================= -->
+    <!--               UNLOADING FLOOR ZONES                     -->
+    <!-- ======================================================= -->
+    <!-- Red Unloading Zone: 1st Quadrant (+X, +Y), 3m x 4m, 1m from North & East walls -->
+    <model name="unloading_zone_red">
+      <static>true</static>
+      <pose>7.5 4.5 0.001 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>3.0 4.0</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.1 0.1 1.0</ambient>
+            <diffuse>0.85 0.15 0.15 1.0</diffuse>
+            <specular>0.2 0.2 0.2 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Green Unloading Zone: 4th Quadrant (+X, -Y), 3m x 4m, 1m from South & East walls -->
+    <model name="unloading_zone_green">
+      <static>true</static>
+      <pose>7.5 -4.5 0.001 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>3.0 4.0</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.1 0.7 0.1 1.0</ambient>
+            <diffuse>0.15 0.8 0.15 1.0</diffuse>
+            <specular>0.2 0.2 0.2 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Warehouse Boundary Walls: PLANES with Light Brown Color -->
+    <!-- North Wall: At y = +7.5m, Normal facing -Y (0, -1, 0), Size 20m wide x 4m high -->
+    <model name="wall_north_plane">
+      <static>true</static>
+      <pose>0 7.5 2.0 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry>
+            <plane>
+              <normal>0 -1 0</normal>
+              <size>20 4.0</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="vis">
+          <geometry>
+            <plane>
+              <normal>0 -1 0</normal>
+              <size>20 4.0</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.50 0.42 0.33 1.0</ambient>
+            <diffuse>0.76 0.65 0.52 1.0</diffuse>
+            <specular>0.1 0.1 0.1 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- South Wall: At y = -7.5m, Normal facing +Y (0, 1, 0), Size 20m wide x 4m high -->
+    <model name="wall_south_plane">
+      <static>true</static>
+      <pose>0 -7.5 2.0 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry>
+            <plane>
+              <normal>0 1 0</normal>
+              <size>20 4.0</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="vis">
+          <geometry>
+            <plane>
+              <normal>0 1 0</normal>
+              <size>20 4.0</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.50 0.42 0.33 1.0</ambient>
+            <diffuse>0.76 0.65 0.52 1.0</diffuse>
+            <specular>0.1 0.1 0.1 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- East Wall: At x = +10.0m, Normal facing -X (-1, 0, 0), Size 15m wide x 4m high -->
+    <model name="wall_east_plane">
+      <static>true</static>
+      <pose>10.0 0 2.0 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry>
+            <plane>
+              <normal>-1 0 0</normal>
+              <size>4.0 15</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="vis">
+          <geometry>
+            <plane>
+              <normal>-1 0 0</normal>
+              <size>4.0 15</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.50 0.42 0.33 1.0</ambient>
+            <diffuse>0.76 0.65 0.52 1.0</diffuse>
+            <specular>0.1 0.1 0.1 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- West Wall: At x = -10.0m, Normal facing +X (1, 0, 0), Size 15m wide x 4m high -->
+    <model name="wall_west_plane">
+      <static>true</static>
+      <pose>-10.0 0 2.0 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry>
+            <plane>
+              <normal>1 0 0</normal>
+              <size>4.0 15</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="vis">
+          <geometry>
+            <plane>
+              <normal>1 0 0</normal>
+              <size>4.0 15</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.50 0.42 0.33 1.0</ambient>
+            <diffuse>0.76 0.65 0.52 1.0</diffuse>
+            <specular>0.1 0.1 0.1 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 4 Corner Range Sensor Beacons: Visual red cuboids (8cm x 4cm x 4cm) -->
+    <!-- Corner 1 (NE): ( 10.0,  7.5, 2.0 ) -->
+    <model name="range_beacon_c1">
+      <static>true</static>
+      <pose>9.95 7.45 2.0 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box><size>0.08 0.04 0.04</size></box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.0 0.0 1.0</ambient>
+            <diffuse>0.95 0.05 0.05 1.0</diffuse>
+            <emissive>0.3 0.0 0.0 1.0</emissive>
+          </material>
+        </visual>
+      </link>
+      <plugin filename="libRangeBeaconPlugin.so" name="range_sensor::RangeBeaconPlugin">
+        <target>mobile_robot</target>
+        <topic>beacon1/range</topic>
+        <update_rate>10.0</update_rate>
+        <sensor_pose>0 0 0 0 0 0</sensor_pose>
+      </plugin>
+    </model>
+
+    <!-- Corner 2 (NW): (-10.0,  7.5, 2.0 ) -->
+    <model name="range_beacon_c2">
+      <static>true</static>
+      <pose>-9.95 7.45 2.0 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box><size>0.08 0.04 0.04</size></box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.0 0.0 1.0</ambient>
+            <diffuse>0.95 0.05 0.05 1.0</diffuse>
+            <emissive>0.3 0.0 0.0 1.0</emissive>
+          </material>
+        </visual>
+      </link>
+      <plugin filename="libRangeBeaconPlugin.so" name="range_sensor::RangeBeaconPlugin">
+        <target>mobile_robot</target>
+        <topic>beacon2/range</topic>
+        <update_rate>10.0</update_rate>
+        <sensor_pose>0 0 0 0 0 0</sensor_pose>
+      </plugin>
+    </model>
+
+    <!-- Corner 3 (SW): (-10.0, -7.5, 2.0 ) -->
+    <model name="range_beacon_c3">
+      <static>true</static>
+      <pose>-9.95 -7.45 2.0 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box><size>0.08 0.04 0.04</size></box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.0 0.0 1.0</ambient>
+            <diffuse>0.95 0.05 0.05 1.0</diffuse>
+            <emissive>0.3 0.0 0.0 1.0</emissive>
+          </material>
+        </visual>
+      </link>
+      <plugin filename="libRangeBeaconPlugin.so" name="range_sensor::RangeBeaconPlugin">
+        <target>mobile_robot</target>
+        <topic>beacon3/range</topic>
+        <update_rate>10.0</update_rate>
+        <sensor_pose>0 0 0 0 0 0</sensor_pose>
+      </plugin>
+    </model>
+
+    <!-- Corner 4 (SE): ( 10.0, -7.5, 2.0 ) -->
+    <model name="range_beacon_c4">
+      <static>true</static>
+      <pose>9.95 -7.45 2.0 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box><size>0.08 0.04 0.04</size></box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.0 0.0 1.0</ambient>
+            <diffuse>0.95 0.05 0.05 1.0</diffuse>
+            <emissive>0.3 0.0 0.0 1.0</emissive>
+          </material>
+        </visual>
+      </link>
+      <plugin filename="libRangeBeaconPlugin.so" name="range_sensor::RangeBeaconPlugin">
+        <target>mobile_robot</target>
+        <topic>beacon4/range</topic>
+        <update_rate>10.0</update_rate>
+        <sensor_pose>0 0 0 0 0 0</sensor_pose>
+      </plugin>
+    </model>
+
+  </world>
+</sdf>
