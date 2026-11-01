@@ -16,7 +16,7 @@ Replace `{ros2_workspace_dir}` with the path to your ROS 2 workspace.
 
 ```bash
 cd {ros2_workspace_dir}/src
-git clone https://github.com/AbhoySB-03/2link_manipulator_simulation.git warehouse_simulation
+git clone https://github.com/AbhoySB-03/warehouse_robot_simulation.git warehouse_simulation
 cd {ros2_workspace_dir}
 colcon build --packages-select warehouse_simulation
 source install/setup.bash
